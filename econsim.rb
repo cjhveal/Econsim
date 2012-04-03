@@ -88,11 +88,11 @@ class Market
   def graph_day n, trades
     agents = @agents
     digraph do
-      node_attribs << "filled" << "boxes"
+      node_attribs << filled << box
       node_attribs << "colorscheme=set14"
-      RESOURCES.map {|r| agents.select {|a| a.pref == r}}.each do |agents|
-        agents.each_with_index do |a,i|
-          node(a.id.to_s,"#{a.id} (#{a.get_pref})").attributes << "fillcolor=#{i}"
+      RESOURCES.map {|r| agents.select {|a| a.pref == r}}.each_with_index do |agents, i|
+        agents.each_with_index do |a|
+          node(a.id.to_s,"#{a.id} (#{a.get_pref})").attributes << "fillcolor=#{i+1}"
         end
       end
       trades.each do |trade|

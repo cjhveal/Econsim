@@ -161,6 +161,3 @@ class Market
     end
   end
 end
-
-m = Market.new 25
-m.run

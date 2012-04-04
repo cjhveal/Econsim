@@ -4,12 +4,16 @@ class Agent
   attr_reader :id
   attr_accessor :pref, :prod, :wood, :iron, :gold
 
+  attr_accessor :neighbors
+
   @@id_count = 0
   def initialize (pref=:gold, prod=:wood, wood=0, iron=0, gold=0)
     @id = @@id_count
     @@id_count += 1
     @wood, @iron, @gold = wood, iron, gold
     @pref, @prod = pref, prod
+
+    @neighbors = []
   end
 
   def get_resource sym

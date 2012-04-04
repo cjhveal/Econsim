@@ -67,9 +67,9 @@ class Agent
 end
 
 class Market
-  attr_accessor :agents, :day_count
+  attr_accessor :agents, :trades, :day_count
   PRODUCTION_RATE = 10
-  TRADES_PER_DAY = 10
+  TRADES_PER_DAY = 3
   DAYS_TO_RUN = 9
   GRAPH_COLOR_BOUND = 100
   GRAPH_COLORS = 9
@@ -80,6 +80,7 @@ class Market
 
   def initialize n
     @day_count = 0
+    @trades = []
     @agents = []
     n.times do
       pref,prod = RESOURCES.sample 2
@@ -107,6 +108,7 @@ class Market
   def graph_day i, n
     market = self
     all_agents = @agents.sort_by &:get_pref
+    trades = @trades
     digraph "Day: #{i} of #{n}" do
       node_attribs << filled
       node_attribs << "colorscheme=reds9"
@@ -116,7 +118,13 @@ class Market
         end
       end
       all_agents.each do |agent|
-        agent.neighbors.each{ |a| edge agent.id, a.id }
+        agent.neighbors.each do |a| 
+          if trades.include? [agent, a]
+            green << (edge agent.id, a.id)
+          else
+            edge agent.id, a.id
+          end
+        end
       end
       save "img#{i.to_s}", "png"
     end
@@ -149,12 +157,12 @@ class Market
     n.times do |i|
       @day_count += 1
       self.produce
-      trades = []
+      @trades = []
       @agents.each do |a|
         next if a.neighbors.empty?
         TRADES_PER_DAY.times do
           b = a.neighbors.sample
-          trades << (self.trade a, b)
+          @trades << (self.trade a, b)
         end
       end
       self.graph_day @day_count, end_day

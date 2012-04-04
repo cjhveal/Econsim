@@ -4,12 +4,16 @@ class Agent
   attr_reader :id
   attr_accessor :pref, :prod, :wood, :iron, :gold
 
+  attr_accessor :neighbors
+
   @@id_count = 0
   def initialize (pref=:gold, prod=:wood, wood=0, iron=0, gold=0)
     @id = @@id_count
     @@id_count += 1
     @wood, @iron, @gold = wood, iron, gold
     @pref, @prod = pref, prod
+
+    @neighbors = []
   end
 
   def get_resource sym
@@ -63,44 +67,66 @@ class Agent
 end
 
 class Market
-  attr_accessor :agents
+  attr_accessor :agents, :day_count
   PRODUCTION_RATE = 10
   TRADES_PER_DAY = 10
-  DAYS_TO_RUN = 10
+  DAYS_TO_RUN = 9
+  GRAPH_COLOR_BOUND = 100
+  GRAPH_COLORS = 9
+  GRAPH_SHAPES = ["rect", "diamond", "ellipse"]
   RESOURCES = [:wood, :iron, :gold]
 
+  #TODO: move current simulation day to instance variable
+
   def initialize n
+    @day_count = 0
     @agents = []
     n.times do
       pref,prod = RESOURCES.sample 2
       @agents << (Agent.new pref, prod)
     end
+    @agents.each do |agent|
+      agent.neighbors = @agents.select {|a| a.prod == agent.pref and a.pref == agent.prod}
+    end
   end
 
-  def log_day n
-    STDOUT.write "***DAY #{n}***\n"
+  def log_day
+    STDOUT.write "***DAY #{@day_count}***\n"
     @agents.each_with_index do |a,i|
       STDOUT.write "Agent:#{i} (Pref:#{a.pref.to_s}, Prod:#{a.prod.to_s}) | Wood:#{a.wood}, Iron:#{a.iron}, Gold:#{a.gold}\n"
     end
     STDOUT.write '\n'
   end
 
-  def graph_day n, trades
-    agents = @agents
-    digraph do
-      node_attribs << filled << box
-      node_attribs << "colorscheme=set14"
-      RESOURCES.map {|r| agents.select {|a| a.pref == r}}.each_with_index do |agents, i|
-        agents.each_with_index do |a|
-          node(a.id.to_s,"#{a.id} (#{a.get_pref})").attributes << "fillcolor=#{i+1}"
+  def scale a, n
+    pref = a.get_pref
+    ratio = (PRODUCTION_RATE*n)/(GRAPH_COLORS-1)
+    (a.get_pref/ratio + 1).floor
+  end
+
+  def graph_day i, n
+    market = self
+    all_agents = @agents.sort_by &:get_pref
+    digraph "Day: #{i} of #{n}" do
+      node_attribs << filled
+      node_attribs << "colorscheme=reds9"
+      RESOURCES.map {|r| all_agents.select {|a| a.pref == r}}.each_with_index do |agents, i|
+        agents.each do |a|
+          node(a.id.to_s, '').attributes << "shape=#{GRAPH_SHAPES[i]}" << "fillcolor=#{market.scale a, n}"
         end
       end
-      trades.each do |trade|
-        a, b = trade
-        edge a.id.to_s, b.id.to_s, a.id.to_s
+      all_agents.each do |agent|
+        agent.neighbors.each{ |a| edge agent.id, a.id }
       end
-      save "img#{n}", "png"
+      save "img#{i.to_s}", "png"
     end
+  end
+
+  def exchange a, b, x, type=:pref
+    a_res, b_res = a.method(type).call, b.method(type).call
+
+    a.inc_resource a_res, x; a.dec_resource b_res, x
+    b.inc_resource b_res, x; b.dec_resource a_res, x
   end
 
   def trade a, b
@@ -110,8 +136,7 @@ class Market
     return false unless prefs.all? {|x| x > 0} 
 
     limit = prefs.min
-    a.inc_pref limit; a.dec_resource b.pref, limit
-    b.inc_pref limit; b.dec_resource a.pref, limit
+    self.exchange a, b, limit
     [a,b]
   end
 
@@ -120,17 +145,22 @@ class Market
   end
 
   def run n=DAYS_TO_RUN
+    end_day = n+@day_count
     n.times do |i|
+      @day_count += 1
       self.produce
       trades = []
-      TRADES_PER_DAY.times do
-        a,b = @agents.sample 2
-        trades << (self.trade a, b)
+      @agents.each do |a|
+        next if a.neighbors.empty?
+        TRADES_PER_DAY.times do
+          b = a.neighbors.sample
+          trades << (self.trade a, b)
+        end
       end
-      self.graph_day i, trades.select {|t| t}
+      self.graph_day @day_count, end_day
     end
   end
 end
 
-m = Market.new 10
+m = Market.new 25
 m.run

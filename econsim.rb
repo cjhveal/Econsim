@@ -158,7 +158,7 @@ class Market
       @day_count += 1
       self.produce
       @trades = []
-      @agents.each do |a|
+      @agents.shuffle.each do |a|
         next if a.neighbors.empty?
         TRADES_PER_DAY.times do
           b = a.neighbors.sample

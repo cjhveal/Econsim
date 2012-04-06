@@ -76,8 +76,6 @@ class Market
   GRAPH_SHAPES = ["rect", "diamond", "ellipse"]
   RESOURCES = [:wood, :iron, :gold]
 
-  #TODO: move current simulation day to instance variable
-
   def initialize n
     @day_count = 0
     @trades = []

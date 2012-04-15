@@ -5,6 +5,8 @@ intent to learn about economics, as well as data visualization.
 I built this simulator without any economic background. I am simply
 building an arbitrary system to examine its consequences.
 
+Here's (an example)[http://i.imgur.com/cQw68.gif?1] of the visualization.
+
 ### TODO
 * Build rake tasks to stitch visualization frames with gificle or imagemagick's animate and cleanup after.
 * Allow trading of neutral resources
